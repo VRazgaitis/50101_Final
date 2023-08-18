@@ -5,6 +5,7 @@ import argparse
 import datetime
 import sys
 import pickle
+import pprint
 
 
 class Task:
@@ -31,8 +32,18 @@ class Task:
         year, month, day, hour, minute, second, and microsecond
         <YYYY-MM-DD hh:mm:ss. ffffff>
         """
-        self.time_created = self.created.time()
+        # self.time_created = self.created.time()
         self.created = self.created.strftime("%a %b  %d %I:%M:%S CST %Y")
+    
+    def _complete_task(self):
+        """
+        Get current time when a task has been marked as complete.
+        
+        Parse the date object into the desired format:
+        <Mon Mar  5 12:10:08 CST 2018>
+        """
+        self.completed = datetime.datetime.now()
+        self.completed = self.completed.strftime("%a %b  %d %I:%M:%S CST %Y")
     
     def _cleanup_due_format(self):
         """
@@ -93,9 +104,16 @@ class Tasks:
             print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}            {task.created}          {"-" if not task.completed else task.completed}')
         print('\n')
         
-    def done(self):
-        pass
-
+    def done(self, completed_task_id):
+        """
+        Updates the "completed" attribute for a completed task object
+        """
+        # Pop a completed task out of the tasklist
+        finished_task = [self.tasks.pop(index) for index, task in enumerate(self.tasks) if task.id == completed_task_id][0]
+        finished_task._complete_task()
+        print("Completed task", finished_task.id)
+        self.tasks.append(finished_task)
+        
     def query(self):
         pass
 
@@ -148,7 +166,7 @@ def main():
     elif args.list:
         tasklist.list()
     elif args.done:
-        print('DONE functionality to be coded.')
+        tasklist.done(args.done)
     elif args.delete:
         print('delete program to be coded.')
     elif args.report:
