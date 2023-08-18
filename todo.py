@@ -90,15 +90,15 @@ class Tasks:
         uncompleted_with_due_date = list(filter(lambda task: task.due != None, uncompleted_tasks))
         uncompleted_no_due_date = list(filter(lambda task: task.due == None, uncompleted_tasks))
         
-        # sort sorted sublists and then join them
+        # sort sublists and then join them
         dated_sorted = sorted(uncompleted_with_due_date, key=lambda task: task.due)
         no_due_date_sorted = sorted(uncompleted_no_due_date, key=lambda task: task.priority)
         sorted_task_list = dated_sorted + no_due_date_sorted
         
-        print('\nvetting pull of dated todos')
-        print('--   ---  ----------  --------   ----')
-        for task in sorted_task_list:
-            print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}')
+        # specify task object attributes to print
+        table = [[task.id, 'Age', task.due, task.priority, task.name] for task in sorted_task_list]
+        print('\n')
+        print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task'], numalign="left", tablefmt="simple_outline"))
         print('\n')
         
     def report(self):
@@ -163,15 +163,8 @@ def main():
     # Parse arguements    
     args = parser.parse_args()
     
-    # print results
-    # print('Add:', args.add)
-    # print('Due:', args.due)
-    # print('priority:', args.priority)
+    
     # print('Query:', args.query)
-    # print('List:', args.list)
-    # print('Done:', args.done)
-    # print('Delete:', args.delete)
-    # print('Report:', args.report)
 
     # unpickle existing tasklist if needed
     tasklist = Tasks()
