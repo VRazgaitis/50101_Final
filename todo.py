@@ -3,25 +3,20 @@ Task Manager Program by Vaidas Razgaitis
 """
 import argparse
 import datetime
-import sys
 import pickle
-import pprint
 from tabulate import tabulate
 from functools import reduce
 
 
 class Task:
     """Representation of a task"""
-    # TODO: unique identifier when a task has been instantiated
-    #   -use a generator for this?
     def __init__(self, name, priority, unique_id, completed=None, due=None):
         self.created = self._get_time()
-        # self._parse_date_string()
         self.completed = completed
         self.name = name.lower()
         self.priority = priority
         self.due = due
-        self._cleanup_due_format()
+        if due: self._cleanup_due_format()
         self.id = unique_id
         
     @staticmethod
@@ -88,6 +83,10 @@ class Tasks:
         #       -can just thru twice, once sorting due dates present
         
         # TODO: fix with tabulate
+        # TODO: display - if due is none 
+        uncompleted_tasks = filter(lambda task: not task.completed, self.tasks)
+               
+        
         print('\nID   Age  Due Date    Priority   Task')
         print('--   ---  ----------  --------   ----')
         for task in self.tasks:
@@ -169,6 +168,7 @@ def main():
     # unpickle existing tasklist if needed
     tasklist = Tasks()
     
+    # User verb options:
     if args.add:
         # Instantiate a new task object
         new_task = Task(name=args.add,
@@ -189,7 +189,7 @@ def main():
     elif args.report:
         tasklist.report()
     
-    # pickle tasklist and exit
+    # pickle modified tasklist and exit
     tasklist.pickle_tasks()
     exit()
 
