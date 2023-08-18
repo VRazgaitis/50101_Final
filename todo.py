@@ -50,8 +50,6 @@ class Task:
         formatted_day = day.zfill(2)
         self.due = f'{formatted_month}/{formatted_day}/{year}'
 
-    # def __str__(self):
-    #     return f'{self.id}    {self.due}  {self.priority}   {self.name}'
 
 class Tasks:
     """A list of `Task` objects."""
@@ -74,13 +72,27 @@ class Tasks:
             pickle.dump(self.tasks, file)
 
     def list(self):
-        pass
-
-    def report(self):
+        """
+        Console print a sorted list of outstanding tasks.
+        """
+        # TODO: separate sorting method, using higher order lambda fn on:
+        #       -priority to having a due date
+        #       -only print NON-DONE items
+        #       -whole list sorted by priority otherwise
+        #       -can just thru twice, once sorting due dates present
+        print('\nID   Age  Due Date    Priority   Task')
+        print('--   ---  ----------  --------   ----')
         for task in self.tasks:
-            # print(task)
-            print(f'{task.id}    {task.due}  {task.priority}   {task.name}')
-
+            print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}')
+        print('\n')
+        
+    def report(self):
+        print('\nID   Age  Due Date    Priority   Task                Created                       Completed')
+        print('--   ---  ----------  --------   ----                ---------------------------   -------------------------')
+        for task in self.tasks:
+            print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}            {task.created}          {"-" if not task.completed else task.completed}')
+        print('\n')
+        
     def done(self):
         pass
 
@@ -134,7 +146,7 @@ def main():
     elif args.query:
         print('QUERY functionality to be coded.')
     elif args.list:
-        print('LIST functionality to be coded.')
+        tasklist.list()
     elif args.done:
         print('DONE functionality to be coded.')
     elif args.delete:
