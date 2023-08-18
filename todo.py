@@ -16,24 +16,47 @@ class Task:
         self.created = datetime.datetime.now()
         self._parse_date_string()
         self.completed = completed
-        self.name = name
+        self.name = name.lower()
         self.priority = priority
         self.due = due
+        self._cleanup_due_format()
         self.id = unique_id
 
     def _parse_date_string(self):
         """
         Parse the date string into the desired format:
         <Mon Mar  5 12:10:08 CST 2018>
+        
+        Data comes in from datetime.now() as
+        year, month, day, hour, minute, second, and microsecond
+        <YYYY-MM-DD hh:mm:ss. ffffff>
         """
         self.time_created = self.created.time()
         self.created = self.created.strftime("%a %b  %d %I:%M:%S CST %Y")
+    
+    def _cleanup_due_format(self):
+        """
+        Cleanup date to consistent format for clean printing
+        
+        For example, converts
+        9/3/2023 to 09/03/2023
+        """
+        date_components = self.due.split('/')
+        if len(date_components) != 3:
+            raise ValueError("Invalid date format")
+        month, day, year = date_components
+        # infil zeros where needed
+        formatted_month = month.zfill(2)
+        formatted_day = day.zfill(2)
+        self.due = f'{formatted_month}/{formatted_day}/{year}'
 
+    # def __str__(self):
+    #     return f'{self.id}    {self.due}  {self.priority}   {self.name}'
 
 class Tasks:
     """A list of `Task` objects."""
 
-    def __init__(self, task_info=None):
+    def __init__(self):
         """Read pickled tasks file into a list"""
         # List of Task objects
         self.tasks = []
@@ -42,7 +65,7 @@ class Tasks:
             with open('.todo.pickle', 'rb') as file:
                 self.tasks = pickle.load(file)
         except FileNotFoundError:
-            # self.pickle_tasks()
+            # pickling of objects list is done just before exiting the program
             pass
 
     def pickle_tasks(self):
@@ -54,7 +77,9 @@ class Tasks:
         pass
 
     def report(self):
-        pass
+        for task in self.tasks:
+            # print(task)
+            print(f'{task.id}    {task.due}  {task.priority}   {task.name}')
 
     def done(self):
         pass
@@ -62,36 +87,14 @@ class Tasks:
     def query(self):
         pass
 
-    def add(self, task_info):
+    def add(self, new_task):
         """Add a task to the tasklist and console print the ID#"""
-        self.tasks.append(task_info)
-        print("Created task", task_info.id)
+        self.tasks.append(new_task)
+        print("Created task", new_task.id)
 
-
-def command_valid(user_action):
-    """Ensure that the user has chosen a valid action verb"""
-    # Only 6 approved verbs
-    action_options = ['--add',
-                      '--delete',
-                      '--list',
-                      '--report',
-                      '--query',
-                      '--done']
-
-    if user_action not in action_options:
-        print('There was an error in choosing TODO list actions. Run "todo -h" for usage instructions.')
-        return False
-    else:
-        return True
-
-
-if __name__ == "__main__":
-    # get the user's action verb
-    user_action = (sys.argv[1])
-
+def main():
     # Create parser
     parser = argparse.ArgumentParser(description='update your TODO list')
-    tasklist = Tasks()
     
     # Add necessary arguements
     parser.add_argument('--add', type=str, required=False, help='a string describing your task to add')
@@ -107,22 +110,42 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # print results
-    print('Add:', args.add)
-    print('Due:', args.due)
-    print('priority:', args.priority)
-    print('Query:', args.query)
-    print('List:', args.list)
-    print('Done:', args.done)
-    print('Delete:', args.delete)
-    print('Report:', args.report)
+    # print('Add:', args.add)
+    # print('Due:', args.due)
+    # print('priority:', args.priority)
+    # print('Query:', args.query)
+    # print('List:', args.list)
+    # print('Done:', args.done)
+    # print('Delete:', args.delete)
+    # print('Report:', args.report)
 
-    if user_action == '--add':
+    # unpickle existing tasklist if needed
+    tasklist = Tasks()
+    
+    if args.add:
         # Instantiate a new task object
         new_task = Task(name=args.add,
                         priority=args.priority,
                         due=args.due,
                         unique_id=len(tasklist.tasks) + 1)
-
+        # add new task to the existing tasklist
         tasklist.add(new_task)
-        tasklist.pickle_tasks()
-        exit()
+    
+    elif args.query:
+        print('QUERY functionality to be coded.')
+    elif args.list:
+        print('LIST functionality to be coded.')
+    elif args.done:
+        print('DONE functionality to be coded.')
+    elif args.delete:
+        print('delete program to be coded.')
+    elif args.report:
+        tasklist.report()
+    
+    # pickle tasklist and exit
+    tasklist.pickle_tasks()
+    exit()
+
+if __name__ == "__main__":
+    main()
+    
