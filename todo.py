@@ -6,44 +6,39 @@ import datetime
 import sys
 import pickle
 import pprint
+from tabulate import tabulate
+from functools import reduce
 
 
 class Task:
     """Representation of a task"""
     # TODO: unique identifier when a task has been instantiated
     #   -use a generator for this?
-
     def __init__(self, name, priority, unique_id, completed=None, due=None):
-        self.created = datetime.datetime.now()
-        self._parse_date_string()
+        self.created = self._get_time()
+        # self._parse_date_string()
         self.completed = completed
         self.name = name.lower()
         self.priority = priority
         self.due = due
         self._cleanup_due_format()
         self.id = unique_id
-
-    def _parse_date_string(self):
-        """
-        Parse the date string into the desired format:
-        <Mon Mar  5 12:10:08 CST 2018>
         
-        Data comes in from datetime.now() as
-        year, month, day, hour, minute, second, and microsecond
-        <YYYY-MM-DD hh:mm:ss. ffffff>
+    @staticmethod
+    def _get_time():
         """
-        # self.time_created = self.created.time()
-        self.created = self.created.strftime("%a %b  %d %I:%M:%S CST %Y")
+        Get current time and parse string into the desired format:
+        <Mon Mar  5 12:10:08 CST 2018>
+        """
+        # Format: <YYYY-MM-DD hh:mm:ss. ffffff>
+        current_time = datetime.datetime.now()
+        return current_time.strftime("%a %b  %d %I:%M:%S CST %Y")
     
     def _complete_task(self):
         """
-        Get current time when a task has been marked as complete.
-        
-        Parse the date object into the desired format:
-        <Mon Mar  5 12:10:08 CST 2018>
+        Update the self.completed attribute with current time
         """
-        self.completed = datetime.datetime.now()
-        self.completed = self.completed.strftime("%a %b  %d %I:%M:%S CST %Y")
+        self.completed = self._get_time()
     
     def _cleanup_due_format(self):
         """
@@ -91,6 +86,8 @@ class Tasks:
         #       -only print NON-DONE items
         #       -whole list sorted by priority otherwise
         #       -can just thru twice, once sorting due dates present
+        
+        # TODO: fix with tabulate
         print('\nID   Age  Due Date    Priority   Task')
         print('--   ---  ----------  --------   ----')
         for task in self.tasks:
@@ -114,13 +111,33 @@ class Tasks:
         print("Completed task", finished_task.id)
         self.tasks.append(finished_task)
         
+    def delete(self, task_id):
+        """
+        Removes a task object from the tasklist.
+        Error checking to ensure that the ID# specified by user exists in the takslist 
+        """
+        # Error check ID#
+        if task_id not in [task.id for task in self.tasks]:
+            print("That is not one of the ID's in the tasklist. Use --report to see a list of valid task ID's\n")
+        else:
+            [self.tasks.remove(task) for task in self.tasks if task.id == task_id]
+            print(f'Deleted task {task_id}\n')
+        
     def query(self):
         pass
 
     def add(self, new_task):
         """Add a task to the tasklist and console print the ID#"""
         self.tasks.append(new_task)
-        print("Created task", new_task.id)
+        print(f'Created task {new_task.id}\n')
+    
+    def _get_new_task_id(self):
+        """
+        Generate a new unique ID#. Returns 1 if the list has not been created yet
+        """
+        # 0 if no tasks have been created, otherwise retrieve the MAX(task.id)
+        highest_task_id = 0 if not self.tasks else max(self.tasks, key=lambda task: getattr(task, 'id')).id
+        return highest_task_id + 1
 
 def main():
     # Create parser
@@ -157,7 +174,7 @@ def main():
         new_task = Task(name=args.add,
                         priority=args.priority,
                         due=args.due,
-                        unique_id=len(tasklist.tasks) + 1)
+                        unique_id=tasklist._get_new_task_id())
         # add new task to the existing tasklist
         tasklist.add(new_task)
     
@@ -168,7 +185,7 @@ def main():
     elif args.done:
         tasklist.done(args.done)
     elif args.delete:
-        print('delete program to be coded.')
+        tasklist.delete(args.delete)
     elif args.report:
         tasklist.report()
     
