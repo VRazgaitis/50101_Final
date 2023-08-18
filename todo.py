@@ -63,7 +63,9 @@ class Tasks:
         pass
 
     def add(self, task_info):
+        """Add a task to the tasklist and console print the ID#"""
         self.tasks.append(task_info)
+        print("Created task", task_info.id)
 
 
 def command_valid(user_action):
@@ -95,7 +97,7 @@ if __name__ == "__main__":
     parser.add_argument('--add', type=str, required=False, help='a string describing your task to add')
     parser.add_argument('--due', type=str, required=False, help='date the task must be completed by, in MM/dd/YYYY format')
     parser.add_argument('--priority', type=int, required=False, default=1, help='task priority; default is 1')
-    parser.add_argument('--query', type=str, required=False, help='a string that will be searched among existing tasks')
+    parser.add_argument('--query', type=str, required=False, nargs="+", help='a string that will be searched among existing tasks')
     parser.add_argument('--list', action='store_true', required=False, help='list all remaining tasks to be completed')
     parser.add_argument('--done', type=int, required=False, help='<ID#> of a task that has been completed')
     parser.add_argument('--delete', type=int, required=False, help='<ID#> of a task to be removed from the list')
@@ -114,13 +116,13 @@ if __name__ == "__main__":
     print('Delete:', args.delete)
     print('Report:', args.report)
 
-    # if user_action == '--add':
-    #     # Instantiate a new task object
-    #     new_task = Task(name=args.add,
-    #                     priority=args.priority,
-    #                     due=args.due,
-    #                     unique_id=len(tasklist.tasks) + 1)
+    if user_action == '--add':
+        # Instantiate a new task object
+        new_task = Task(name=args.add,
+                        priority=args.priority,
+                        due=args.due,
+                        unique_id=len(tasklist.tasks) + 1)
 
-    #     tasklist.add(new_task)
-    #     tasklist.pickle_tasks()
-    #     exit()
+        tasklist.add(new_task)
+        tasklist.pickle_tasks()
+        exit()
