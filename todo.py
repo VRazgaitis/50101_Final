@@ -16,7 +16,7 @@ class Task:
         self.name = name.lower()
         self.priority = priority
         self.due = due
-        if due: self._cleanup_due_format()
+        if due is not None: self._cleanup_due_format()
         self.id = unique_id
         
     @staticmethod
@@ -49,7 +49,9 @@ class Task:
         # infil zeros where needed
         formatted_month = month.zfill(2)
         formatted_day = day.zfill(2)
-        self.due = f'{formatted_month}/{formatted_day}/{year}'
+        # self.due = f'{formatted_month}/{formatted_day}/{year}'
+        datestring = f'{formatted_month}/{formatted_day}/{year}'
+        self.due = datetime.datetime.strptime(datestring, '%m/%d/%Y')
 
 
 class Tasks:
@@ -75,21 +77,27 @@ class Tasks:
     def list(self):
         """
         Console print a sorted list of outstanding tasks.
+        
+        SORT PRIORITY:
+        -dated tasks by earliest date due
+        -nondated tasks by priority number
         """
-        # TODO: separate sorting method, using higher order lambda fn on:
-        #       -priority to having a due date
-        #       -only print NON-DONE items
-        #       -whole list sorted by priority otherwise
-        #       -can just thru twice, once sorting due dates present
-        
         # TODO: fix with tabulate
-        # TODO: display - if due is none 
-        uncompleted_tasks = filter(lambda task: not task.completed, self.tasks)
-               
+        # TODO: display - if due is none
         
-        print('\nID   Age  Due Date    Priority   Task')
+        # make sublists
+        uncompleted_tasks = list(filter(lambda task: task.completed == None, self.tasks))
+        uncompleted_with_due_date = list(filter(lambda task: task.due != None, uncompleted_tasks))
+        uncompleted_no_due_date = list(filter(lambda task: task.due == None, uncompleted_tasks))
+        
+        # sort sorted sublists and then join them
+        dated_sorted = sorted(uncompleted_with_due_date, key=lambda task: task.due)
+        no_due_date_sorted = sorted(uncompleted_no_due_date, key=lambda task: task.priority)
+        sorted_task_list = dated_sorted + no_due_date_sorted
+        
+        print('\nvetting pull of dated todos')
         print('--   ---  ----------  --------   ----')
-        for task in self.tasks:
+        for task in sorted_task_list:
             print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}')
         print('\n')
         
