@@ -38,14 +38,15 @@ class Task:
         self.due = due
         if due is not None: self._cleanup_due_format()
         self.id = unique_id
+        self.task_age = None
 
-    @staticmethod
-    def _get_time():
+    def _get_time(self):
         """
         Get current time and parse string into the desired format:
         <Mon Mar  5 12:10:08 CST 2018>
         """
         # Format: <YYYY-MM-DD hh:mm:ss. ffffff>
+        self.created_time_obj = datetime.datetime.now()
         current_time = datetime.datetime.now()
         return current_time.strftime("%a %b  %d %I:%M:%S CST %Y")
     
@@ -82,6 +83,7 @@ class Tasks:
     """A list of `Task` objects."""
     def __init__(self):
         self.tasks = []
+        self.current_time = datetime.datetime.now()
         # read pickled Tasks object list into a list 
         try:
             with open('.todo.pickle', 'rb') as file:
@@ -89,7 +91,20 @@ class Tasks:
         except FileNotFoundError:
             # pickling of newly created objects list is done just before exiting the program
             pass
-
+        self._compute_task_ages()
+        
+    def _compute_task_ages(self):
+        """Populate task ages. Called at instantiation of tasklist"""
+        # if len(self.tasks) == 0:
+        #     pass
+        # else:
+        for task in self.tasks:
+            time_delta = self.current_time - task.created_time_obj
+            # Get the delta in days
+            delta_days = time_delta.days
+            # Format the delta in days as a string
+            task.age = f"{delta_days}d"
+        
     def pickle_tasks(self):
         """Picle your task list to a file"""
         with open('.todo.pickle', 'wb') as file:
@@ -103,9 +118,6 @@ class Tasks:
         -due dated tasks: by earliest date due
         -nondated tasks: by priority number
         """
-        # TODO: display - if due is none
-        for task in self.tasks:
-            print(type(task.due))
         
         # make sublists
         uncompleted_tasks = list(filter(lambda task: task.completed == None, self.tasks))
@@ -118,7 +130,7 @@ class Tasks:
         sorted_task_list = dated_sorted + no_due_date_sorted
         
         # specify task object attributes to print
-        table = [[task.id, 'Age', task.due, task.priority, task.name] for task in sorted_task_list]
+        table = [[task.id, task.age, task.due, task.priority, task.name] for task in sorted_task_list]
         print('\n')
         print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task'], numalign="left", tablefmt="simple_outline"))
         print('\n')
@@ -141,7 +153,7 @@ class Tasks:
         sorted_task_list = dated_sorted + no_due_date_sorted
         
         # specify task object attributes to print
-        table = [[task.id, 'Age', task.due, task.priority, task.name, task.created, task.completed] for task in sorted_task_list]
+        table = [[task.id, task.age, task.due, task.priority, task.name, task.created, task.completed] for task in sorted_task_list]
         print('\n')
         print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task', 'Created', 'Completed'], numalign="left", tablefmt="simple_outline"))
         print('\n')
@@ -190,7 +202,7 @@ class Tasks:
         sorted_query_tasks = dated_sorted + no_due_date_sorted
 
         # specify task object attributes to print
-        table = [[task.id, 'Age', task.due, task.priority, task.name] for task in sorted_query_tasks]
+        table = [[task.id, task.age, task.due, task.priority, task.name] for task in sorted_query_tasks]
         print('\n')
         print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task'], numalign="left", tablefmt="simple_outline"))
         print('\n')
