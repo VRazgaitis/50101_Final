@@ -58,7 +58,9 @@ class Task:
     
     def _cleanup_due_format(self):
         """
-        Cleanup date to consistent format for clean printing (add zeros)
+        Converts due date to a datetime object for sorting
+        
+        Additionally, cleans date string to a consistent format for clean printing (adds zeros)
         
         For example, converts
         9/3/2023 to 09/03/2023
@@ -95,9 +97,6 @@ class Tasks:
         
     def _compute_task_ages(self):
         """Populate task ages. Called at instantiation of tasklist"""
-        # if len(self.tasks) == 0:
-        #     pass
-        # else:
         for task in self.tasks:
             time_delta = self.current_time - task.created_time_obj
             # Get the delta in days
