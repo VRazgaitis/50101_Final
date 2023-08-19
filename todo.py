@@ -1,5 +1,25 @@
 """
 Task Manager Program by Vaidas Razgaitis
+
+PROGRAM REQUIREMENTS:
+---------------------
+Take input arguments to:
+-add/delete task 
+-mark task as complete
+-list remaining tasks
+-search remaining tasks for keywords
+-report all tasks (remaining AND complete)
+
+
+PROGRAM SUMMARY
+----------------
+-Takes action verb input arguement
+-Instantiates Tasks tasklist (reads pickle file containing tasklist, if it exists)
+-Instantiates new Task objects or modifies existing ones
+-Pickles modified Tasks list of Task objects into a binary file, <.todo.pickle>, in the pwd
+
+Tabulate documentation:
+https://pypi.org/project/tabulate/
 """
 import argparse
 import datetime
@@ -18,7 +38,7 @@ class Task:
         self.due = due
         if due is not None: self._cleanup_due_format()
         self.id = unique_id
-        
+
     @staticmethod
     def _get_time():
         """
@@ -37,36 +57,37 @@ class Task:
     
     def _cleanup_due_format(self):
         """
-        Cleanup date to consistent format for clean printing
+        Cleanup date to consistent format for clean printing (add zeros)
         
         For example, converts
         9/3/2023 to 09/03/2023
         """
+        # error check input
         date_components = self.due.split('/')
         if len(date_components) != 3:
             raise ValueError("Invalid date format")
+        
+        # add zeros on single digit days and months
         month, day, year = date_components
-        # infil zeros where needed
         formatted_month = month.zfill(2)
         formatted_day = day.zfill(2)
-        # self.due = f'{formatted_month}/{formatted_day}/{year}'
         datestring = f'{formatted_month}/{formatted_day}/{year}'
-        self.due = datetime.datetime.strptime(datestring, '%m/%d/%Y')
+        
+        # convert to a datetime object and output in desired format, MM/DD/YYY
+        datetime_object = datetime.datetime.strptime(datestring, '%m/%d/%Y')
+        self.due = datetime_object.strftime('%m/%d/%Y')
 
 
 class Tasks:
     """A list of `Task` objects."""
-
     def __init__(self):
-        """Read pickled tasks file into a list"""
-        # List of Task objects
         self.tasks = []
-
+        # read pickled Tasks object list into a list 
         try:
             with open('.todo.pickle', 'rb') as file:
                 self.tasks = pickle.load(file)
         except FileNotFoundError:
-            # pickling of objects list is done just before exiting the program
+            # pickling of newly created objects list is done just before exiting the program
             pass
 
     def pickle_tasks(self):
@@ -79,11 +100,12 @@ class Tasks:
         Console print a sorted list of outstanding tasks.
         
         SORT PRIORITY:
-        -dated tasks by earliest date due
-        -nondated tasks by priority number
+        -due dated tasks: by earliest date due
+        -nondated tasks: by priority number
         """
-        # TODO: fix with tabulate
         # TODO: display - if due is none
+        for task in self.tasks:
+            print(type(task.due))
         
         # make sublists
         uncompleted_tasks = list(filter(lambda task: task.completed == None, self.tasks))
@@ -102,10 +124,26 @@ class Tasks:
         print('\n')
         
     def report(self):
-        print('\nID   Age  Due Date    Priority   Task                Created                       Completed')
-        print('--   ---  ----------  --------   ----                ---------------------------   -------------------------')
-        for task in self.tasks:
-            print(f'{task.id}    Age  {task.due}  {task.priority}          {task.name}            {task.created}          {"-" if not task.completed else task.completed}')
+        """
+        Console print a sorted report of ALL tasks.
+        
+        SORT PRIORITY:
+        -due dated tasks: by earliest date due
+        -nondated tasks: by priority number
+        """
+        # separate list by <has due date>
+        tasks_with_due_date = list(filter(lambda task: task.due != None, self.tasks))
+        tasks_missing_due_date = list(filter(lambda task: task.due == None, self.tasks))
+        
+        # sort sublists and then join them
+        dated_sorted = sorted(tasks_with_due_date, key=lambda task: task.due)
+        no_due_date_sorted = sorted(tasks_missing_due_date, key=lambda task: task.priority)
+        sorted_task_list = dated_sorted + no_due_date_sorted
+        
+        # specify task object attributes to print
+        table = [[task.id, 'Age', task.due, task.priority, task.name, task.created, task.completed] for task in sorted_task_list]
+        print('\n')
+        print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task', 'Created', 'Completed'], numalign="left", tablefmt="simple_outline"))
         print('\n')
         
     def done(self, completed_task_id):
@@ -130,9 +168,33 @@ class Tasks:
             [self.tasks.remove(task) for task in self.tasks if task.id == task_id]
             print(f'Deleted task {task_id}\n')
         
-    def query(self):
-        pass
+    def query(self, search_terms):
+        """
+        Return non-completed tasks that contain query terms
+        """
+        # remove capitalization for string compare
+        search_terms = [term.lower() for term in search_terms]
+        uncompleted_tasks = list(filter(lambda task: task.completed == None, self.tasks))    
+        qeuried_tasks = []
+        for term in search_terms:
+            term_matches = list(filter(lambda task: term in task.name, uncompleted_tasks))
+            qeuried_tasks = qeuried_tasks + term_matches
+        
+        # split list on <contains due date>   
+        with_due_date = list(filter(lambda task: task.due != None, qeuried_tasks))
+        no_due_date = list(filter(lambda task: task.due == None, qeuried_tasks))
+        
+        # sort sublists, then join them
+        dated_sorted = sorted(with_due_date, key=lambda task: task.due)
+        no_due_date_sorted = sorted(no_due_date, key=lambda task: task.priority)
+        sorted_query_tasks = dated_sorted + no_due_date_sorted
 
+        # specify task object attributes to print
+        table = [[task.id, 'Age', task.due, task.priority, task.name] for task in sorted_query_tasks]
+        print('\n')
+        print(tabulate(table, headers=['ID', 'Age', 'Due Date', 'Priority', 'Task'], numalign="left", tablefmt="simple_outline"))
+        print('\n')
+        
     def add(self, new_task):
         """Add a task to the tasklist and console print the ID#"""
         self.tasks.append(new_task)
@@ -147,6 +209,9 @@ class Tasks:
         return highest_task_id + 1
 
 def main():
+    """
+    Main loop for TODO list software.
+    """
     # Create parser
     parser = argparse.ArgumentParser(description='update your TODO list')
     
@@ -163,10 +228,7 @@ def main():
     # Parse arguements    
     args = parser.parse_args()
     
-    
-    # print('Query:', args.query)
-
-    # unpickle existing tasklist if needed
+    # unpickle tasklist
     tasklist = Tasks()
     
     # User verb options:
@@ -178,9 +240,8 @@ def main():
                         unique_id=tasklist._get_new_task_id())
         # add new task to the existing tasklist
         tasklist.add(new_task)
-    
     elif args.query:
-        print('QUERY functionality to be coded.')
+        tasklist.query(args.query)
     elif args.list:
         tasklist.list()
     elif args.done:
